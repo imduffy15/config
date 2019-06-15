@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/JeremyLoy/config"
+	"github.com/hookactions/config"
 )
 
 type MySubConfig struct {
@@ -86,4 +86,27 @@ func Example_structTags() {
 
 	// Output:
 	// db://
+}
+
+type MyPreProcessor struct{}
+
+func (p *MyPreProcessor) PreProcessValue(key, value string) string {
+	return strings.ToUpper(value)
+}
+
+func ExampleWithValuePreProcessor() {
+	type MyConfig struct {
+		Foo string
+	}
+
+	os.Clearenv()
+	os.Setenv("FOO", "bar")
+
+	var c MyConfig
+	config.WithValuePreProcessor(&MyPreProcessor{}).FromEnv().To(&c)
+
+	fmt.Println(c.Foo)
+
+	// Output:
+	// BAR
 }

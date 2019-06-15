@@ -1,16 +1,22 @@
 # Config
-[![Documentation](https://godoc.org/github.com/JeremyLoy/config?status.svg)](http://godoc.org/github.com/JeremyLoy/config)
-[![Mentioned in Awesome Go](https://awesome.re/mentioned-badge-flat.svg)](https://github.com/avelino/awesome-go)
-[![Build Status](https://travis-ci.org/JeremyLoy/config.svg?branch=master)](https://travis-ci.org/JeremyLoy/config)
-[![Go Report Card](https://goreportcard.com/badge/github.com/JeremyLoy/config)](https://goreportcard.com/report/github.com/JeremyLoy/config)
-[![Coverage Status](https://coveralls.io/repos/github/JeremyLoy/config/badge.svg?branch=master)](https://coveralls.io/github/JeremyLoy/config?branch=master)
-[![GitHub issues](https://img.shields.io/github/issues/JeremyLoy/config.svg)](https://github.com/JeremyLoy/config/issues)
-[![license](https://img.shields.io/github/license/JeremyLoy/config.svg?maxAge=2592000)](https://github.com/JeremyLoy/config/LICENSE)
-[![Release](https://img.shields.io/github/release/JeremyLoy/config.svg?label=Release)](https://github.com/JeremyLoy/config/releases)
+[![Documentation](https://godoc.org/github.com/hookactions/config?status.svg)](http://godoc.org/github.com/hookactions/config)
+[![CircleCI](https://circleci.com/gh/hookactions/config.svg?style=svg)](https://circleci.com/gh/hookactions/config)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hookactions/config)](https://goreportcard.com/report/github.com/hookactions/config)
+[![license](https://img.shields.io/github/license/hookactions/config.svg?maxAge=2592000)](https://github.com/hookactions/config/LICENSE)
+[![Release](https://img.shields.io/github/release/hookactions/config.svg?label=Release)](https://github.com/hookactions/config/releases)
 
 Manage your application config as a typesafe struct in as little as two function calls.
 
 ```go
+package main
+
+import (
+	"context"
+	"fmt"
+	
+	"github.com/hookactions/config"
+)
+
 type MyConfig struct {
 	DatabaseUrl string `config:"DATABASE_URL"`
 	FeatureFlag bool   `config:"FEATURE_FLAG"`
@@ -20,11 +26,22 @@ type MyConfig struct {
 
 var c MyConfig
 config.FromEnv().To(&c)
+
+fmt.Printf("%v\n", c)
+
+// Supports AWS Secret Manager and Parameter store
+// sm://my_value
+// ssm://my_value
+
+p, _ := config.NewAWSSecretManagerValuePreProcessor(context.Background(), true)
+config.WithValuePreProcessor(p).FromEnv().To(&c)
+
+fmt.Printf("%v\n", c)
 ```
 
 ## How It Works
 
-Its just simple, pure stdlib. 
+Its just simple, pure stdlib with optional AWS support. 
 
 * A field's type determines what [strconv](https://golang.org/pkg/strconv/) function is called.
 * All string conversion rules are as defined in the [strconv](https://golang.org/pkg/strconv/) package
@@ -47,9 +64,6 @@ Its just simple, pure stdlib.
     * only 2 lines to configure.
 * Composeable:
     * Merge local files and environment variables for effortless local development.
-* small:
-    * only stdlib 
-    * < 180 LoC
     
 ## Design Philosophy
 
