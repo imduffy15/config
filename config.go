@@ -32,9 +32,10 @@ import (
 )
 
 const (
-	structTagKey = "config"
-	structDelim  = "__"
-	sliceDelim   = " "
+	structTagKey         = "config"
+	structDelim          = "__"
+	sliceDelim           = " "
+	structTagIgnoreField = "-"
 )
 
 // ValuePreProcessor is an interface for pre-processing values
@@ -158,6 +159,10 @@ func (c *Builder) populateStructRecursively(structPtr interface{}, prefix string
 		fieldPtr := structValue.Field(i).Addr().Interface()
 
 		key := getKey(fieldType, prefix)
+		if key == structTagIgnoreField {
+			continue
+		}
+
 		value := c.configMap[key]
 
 		switch fieldType.Type.Kind() {

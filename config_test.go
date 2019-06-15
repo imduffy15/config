@@ -6,6 +6,9 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_Integration(t *testing.T) {
@@ -384,4 +387,24 @@ func Test_getKey(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_structTagIgnore(t *testing.T) {
+	type C struct {
+		Foo *string `config:"-"`
+		Bar string
+	}
+
+	require.NoError(t, os.Setenv("FOO", "something"))
+	require.NoError(t, os.Setenv("BAR", "baz"))
+
+	var got C
+	want := C{
+		Foo: nil,
+		Bar: "baz",
+	}
+
+	FromEnv().To(&got)
+
+	assert.Equal(t, want, got)
 }
