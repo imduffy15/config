@@ -1,6 +1,6 @@
 # Config
 [![Documentation](https://godoc.org/github.com/hookactions/config?status.svg)](http://godoc.org/github.com/hookactions/config)
-[![CircleCI](https://circleci.com/gh/hookactions/config.svg?style=svg)](https://circleci.com/gh/hookactions/config)
+[![CircleCI](https://circleci.com/gh/hookactions/config.svg?style=shield)](https://circleci.com/gh/hookactions/config)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hookactions/config)](https://goreportcard.com/report/github.com/hookactions/config)
 [![license](https://img.shields.io/github/license/hookactions/config.svg?maxAge=2592000)](https://github.com/hookactions/config/LICENSE)
 [![Release](https://img.shields.io/github/release/hookactions/config.svg?label=Release)](https://github.com/hookactions/config/releases)
