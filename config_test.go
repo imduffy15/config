@@ -382,7 +382,7 @@ func Test_getKey(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			if got := getKey(tt.args.t, tt.args.prefix); got != tt.want {
+			if got := getKey(tt.args.t, tt.args.prefix); *got != tt.want {
 				t.Errorf("getKey() = %v, want %v", got, tt.want)
 			}
 		})
@@ -390,18 +390,25 @@ func Test_getKey(t *testing.T) {
 }
 
 func Test_structTagIgnore(t *testing.T) {
+	type B struct {
+		Foo *string `config:"-"`
+		Baz string
+	}
 	type C struct {
+		B   B
 		Foo *string `config:"-"`
 		Bar string
 	}
 
 	require.NoError(t, os.Setenv("FOO", "something"))
+	require.NoError(t, os.Setenv("B__FOO", "bar"))
+	require.NoError(t, os.Setenv("B__BAZ", "baz"))
 	require.NoError(t, os.Setenv("BAR", "baz"))
 
 	var got C
 	want := C{
-		Foo: nil,
 		Bar: "baz",
+		B:   B{Baz: "baz"},
 	}
 
 	FromEnv().To(&got)

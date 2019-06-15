@@ -158,11 +158,12 @@ func (c *Builder) populateStructRecursively(structPtr interface{}, prefix string
 		fieldType := structValue.Type().Field(i)
 		fieldPtr := structValue.Field(i).Addr().Interface()
 
-		key := getKey(fieldType, prefix)
-		if key == structTagIgnoreField {
+		possibleKey := getKey(fieldType, prefix)
+		if possibleKey == nil {
 			continue
 		}
 
+		key := *possibleKey
 		value := c.configMap[key]
 
 		switch fieldType.Type.Kind() {
@@ -179,14 +180,18 @@ func (c *Builder) populateStructRecursively(structPtr interface{}, prefix string
 // getKey returns the string that represents this structField in the config map.
 // If the structField has the appropriate structTag set, it is used.
 // Otherwise, field's name is used.
-func getKey(t reflect.StructField, prefix string) string {
+func getKey(t reflect.StructField, prefix string) *string {
 	name := t.Name
 	if tag, exists := t.Tag.Lookup(structTagKey); exists {
-		if tag = strings.TrimSpace(tag); tag != "" {
+		if tag = strings.TrimSpace(tag); tag == structTagIgnoreField {
+			return nil
+		} else if tag != "" {
 			name = tag
 		}
 	}
-	return strings.ToLower(prefix + name)
+
+	key := strings.ToLower(prefix + name)
+	return &key
 }
 
 // stringToSlice converts a string to a slice of string, using delim.
