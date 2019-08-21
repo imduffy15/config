@@ -1,0 +1,26 @@
+image: golang:1.12
+
+variables:
+  GOFLAGS: -mod=readonly
+  GOPATH: ${CI_PROJECT_DIR}/vendor/go
+
+stages:
+  - dependencies
+  - test
+
+.modcache: &modcache
+  key: modcache
+  paths:
+    - vendor/go/pkg/mod/
+
+dependencies:
+  stage: dependencies
+  script: go mod download
+  cache: *modcache
+
+test:
+  stage: test
+  script: make test
+  cache:
+    <<: *modcache
+    policy: pull
