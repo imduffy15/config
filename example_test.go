@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/hookactions/config"
+	"gitlab.com/hookactions/config"
 )
 
 type MySubConfig struct {
