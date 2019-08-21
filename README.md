@@ -1,8 +1,6 @@
 # Config
 [![Documentation](https://godoc.org/gitlab.com/hookactions/config?status.svg)](http://godoc.org/gitlab.com/hookactions/config)
 [![Go Report Card](https://goreportcard.com/badge/gitlab.com/hookactions/config)](https://goreportcard.com/report/gitlab.com/hookactions/config)
-[![license](https://img.shields.io/github/license/hookactions/config.svg?maxAge=2592000)](https://gitlab.com/hookactions/config/LICENSE)
-[![Release](https://img.shields.io/github/release/hookactions/config.svg?label=Release)](https://gitlab.com/hookactions/config/releases)
 
 Manage your application config as a typesafe struct in as little as two function calls.
 
