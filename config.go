@@ -29,6 +29,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -238,46 +239,51 @@ func convertAndSetSlice(slicePtr interface{}, values []string) {
 // Errors in string conversion are ignored, and the settable remains a zero value.
 func convertAndSetValue(settable interface{}, s string) {
 	settableValue := reflect.ValueOf(settable).Elem()
-	switch settableValue.Kind() {
-	case reflect.String:
+	i := settableValue.Interface()
+
+	switch i.(type) {
+	case string:
 		settableValue.SetString(s)
-	case reflect.Int:
+	case time.Duration:
+		d, _ := time.ParseDuration(s)
+		settableValue.Set(reflect.ValueOf(d))
+	case int:
 		val, _ := strconv.ParseInt(s, 10, 0)
 		settableValue.SetInt(val)
-	case reflect.Int8:
+	case int8:
 		val, _ := strconv.ParseInt(s, 10, 8)
 		settableValue.SetInt(val)
-	case reflect.Int16:
+	case int16:
 		val, _ := strconv.ParseInt(s, 10, 16)
 		settableValue.SetInt(val)
-	case reflect.Int32:
+	case int32:
 		val, _ := strconv.ParseInt(s, 10, 32)
 		settableValue.SetInt(val)
-	case reflect.Int64:
+	case int64:
 		val, _ := strconv.ParseInt(s, 10, 64)
 		settableValue.SetInt(val)
-	case reflect.Uint:
+	case uint:
 		val, _ := strconv.ParseUint(s, 10, 0)
 		settableValue.SetUint(val)
-	case reflect.Uint8:
+	case uint8:
 		val, _ := strconv.ParseUint(s, 10, 8)
 		settableValue.SetUint(val)
-	case reflect.Uint16:
+	case uint16:
 		val, _ := strconv.ParseUint(s, 10, 16)
 		settableValue.SetUint(val)
-	case reflect.Uint32:
+	case uint32:
 		val, _ := strconv.ParseUint(s, 10, 32)
 		settableValue.SetUint(val)
-	case reflect.Uint64:
+	case uint64:
 		val, _ := strconv.ParseUint(s, 10, 64)
 		settableValue.SetUint(val)
-	case reflect.Bool:
+	case bool:
 		val, _ := strconv.ParseBool(s)
 		settableValue.SetBool(val)
-	case reflect.Float32:
+	case float32:
 		val, _ := strconv.ParseFloat(s, 32)
 		settableValue.SetFloat(val)
-	case reflect.Float64:
+	case float64:
 		val, _ := strconv.ParseFloat(s, 64)
 		settableValue.SetFloat(val)
 	default:

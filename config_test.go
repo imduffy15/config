@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -229,6 +230,22 @@ func Test_convertAndSetValue(t *testing.T) {
 				s:        "abc",
 			},
 			want: func() interface{} { v := "abc"; return &v }(),
+		},
+		{
+			name: "time.Duration",
+			args: args{
+				settable: new(time.Duration),
+				s:        "500ms",
+			},
+			want: func() interface{} { v := 500 * time.Millisecond; return &v }(),
+		},
+		{
+			name: "time.Duration 2",
+			args: args{
+				settable: new(time.Duration),
+				s:        "1s",
+			},
+			want: func() interface{} { v := 1 * time.Second; return &v }(),
 		},
 	}
 	for _, tt := range tests {
