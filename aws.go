@@ -5,11 +5,9 @@ import (
 	"regexp"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/external"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
-	"github.com/aws/aws-sdk-go-v2/service/secretsmanager/secretsmanageriface"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
-	"github.com/aws/aws-sdk-go-v2/service/ssm/ssmiface"
 	"github.com/pkg/errors"
 )
 
@@ -28,7 +26,7 @@ func checkPrefixAndStrip(re *regexp.Regexp, s string) (string, bool) {
 // NewAWSSecretManagerValuePreProcessor creates a new AWSSecretManagerValuePreProcessor with the given context and whether to decrypt parameter store values or not.
 // This will load the aws config from external.LoadDefaultAWSConfig()
 func NewAWSSecretManagerValuePreProcessor(ctx context.Context, decryptParameterStoreValues bool) (*AWSSecretManagerValuePreProcessor, error) {
-	awsConfig, err := external.LoadDefaultAWSConfig()
+	awsConfig, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "config/aws: error loading default aws config")
 	}
@@ -36,10 +34,18 @@ func NewAWSSecretManagerValuePreProcessor(ctx context.Context, decryptParameterS
 	return &AWSSecretManagerValuePreProcessor{
 		decryptParameterStoreValues: decryptParameterStoreValues,
 
-		secretsManager: secretsmanager.New(awsConfig),
-		parameterStore: ssm.New(awsConfig),
+		secretsManager: secretsmanager.NewFromConfig(awsConfig),
+		parameterStore: ssm.NewFromConfig(awsConfig),
 		ctx:            ctx,
 	}, nil
+}
+
+type SecretsManager interface {
+    GetSecretValue(ctx context.Context, params *secretsmanager.GetSecretValueInput, optFns ...func(*secretsmanager.Options)) (*secretsmanager.GetSecretValueOutput, error)
+}
+
+type ParameterStoreManager interface {
+    GetParameter(ctx context.Context, params *ssm.GetParameterInput, optFns ...func(*ssm.Options)) (*ssm.GetParameterOutput, error)
 }
 
 // AWSSecretManagerValuePreProcessor is a ValuePreProcessor for AWS.
@@ -47,8 +53,8 @@ func NewAWSSecretManagerValuePreProcessor(ctx context.Context, decryptParameterS
 type AWSSecretManagerValuePreProcessor struct {
 	decryptParameterStoreValues bool
 
-	secretsManager secretsmanageriface.ClientAPI
-	parameterStore ssmiface.ClientAPI
+	secretsManager SecretsManager
+	parameterStore ParameterStoreManager
 	ctx            context.Context
 }
 
@@ -75,13 +81,13 @@ func (p *AWSSecretManagerValuePreProcessor) loadStringValueFromSecretsManager(ct
 	return *resp.SecretString
 }
 
-func (p *AWSSecretManagerValuePreProcessor) requestSecret(ctx context.Context, name string) (*secretsmanager.GetSecretValueResponse, error) {
-	input := &secretsmanager.GetSecretValueInput{SecretId: aws.String(name)}
-	return p.secretsManager.GetSecretValueRequest(input).Send(ctx)
+func (p *AWSSecretManagerValuePreProcessor) requestSecret(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
+	return p.secretsManager.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{SecretId: aws.String(name)})
 }
 
 func (p *AWSSecretManagerValuePreProcessor) loadStringValueFromParameterStore(ctx context.Context, name string, decrypt bool) string {
 	resp, err := p.requestParameter(ctx, name, decrypt)
+
 	if err != nil {
 		panic("config/aws/loadStringValueFromParameterStore: error loading value, " + err.Error())
 	}
@@ -89,9 +95,11 @@ func (p *AWSSecretManagerValuePreProcessor) loadStringValueFromParameterStore(ct
 	return *resp.Parameter.Value
 }
 
-func (p *AWSSecretManagerValuePreProcessor) requestParameter(ctx context.Context, name string, decrypt bool) (*ssm.GetParameterResponse, error) {
-	input := &ssm.GetParameterInput{Name: aws.String(name), WithDecryption: aws.Bool(decrypt)}
-	return p.parameterStore.GetParameterRequest(input).Send(ctx)
+func (p *AWSSecretManagerValuePreProcessor) requestParameter(ctx context.Context, name string, decrypt bool) (*ssm.GetParameterOutput, error) {
+	return p.parameterStore.GetParameter(ctx, &ssm.GetParameterInput{
+	    Name: aws.String(name),
+	    WithDecryption: decrypt,
+    })
 }
 
 // compile time assertion

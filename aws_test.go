@@ -1,72 +1,66 @@
 package config
 
 import (
-	"context"
-	"encoding/base64"
-	"net/http"
-	"testing"
+    "context"
+    "encoding/base64"
+    "github.com/aws/aws-sdk-go-v2/service/ssm/types"
+    "github.com/aws/smithy-go/middleware"
+    "testing"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
-	"github.com/aws/aws-sdk-go-v2/service/secretsmanager/secretsmanageriface"
-	"github.com/aws/aws-sdk-go-v2/service/ssm"
-	"github.com/aws/aws-sdk-go-v2/service/ssm/ssmiface"
-	"github.com/stretchr/testify/assert"
+    "github.com/aws/aws-sdk-go-v2/aws"
+    "github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+    "github.com/aws/aws-sdk-go-v2/service/ssm"
+    "github.com/stretchr/testify/assert"
 )
 
 type mockSecretManagerClient struct {
-	secretsmanageriface.ClientAPI
-
-	checkInput  func(*secretsmanager.GetSecretValueInput)
-	stringValue *string
-	binaryValue []byte
+    checkInput  func(*secretsmanager.GetSecretValueInput)
+    stringValue *string
+    binaryValue []byte
 }
 
-func (m *mockSecretManagerClient) GetSecretValueRequest(in *secretsmanager.GetSecretValueInput) secretsmanager.GetSecretValueRequest {
-	if m.checkInput != nil {
-		m.checkInput(in)
-	}
+func (m *mockSecretManagerClient) GetSecretValue(ctx context.Context, params *secretsmanager.GetSecretValueInput, optFns ...func(*secretsmanager.Options)) (*secretsmanager.GetSecretValueOutput, error) {
+    if m.checkInput != nil {
+        m.checkInput(params)
+    }
 
-	req := &aws.Request{
-		Data: &secretsmanager.GetSecretValueOutput{
-			SecretString: m.stringValue,
-			SecretBinary: m.binaryValue,
-		},
-		HTTPRequest: new(http.Request),
-	}
-	return secretsmanager.GetSecretValueRequest{Request: req, Input: in, Copy: m.GetSecretValueRequest}
+    return &secretsmanager.GetSecretValueOutput{
+        ARN:            nil,
+        CreatedDate:    nil,
+        Name:           nil,
+        SecretBinary:   m.binaryValue,
+        SecretString:   m.stringValue,
+        VersionId:      nil,
+        VersionStages:  nil,
+        ResultMetadata: middleware.Metadata{},
+    }, nil
 }
 
 type mockParameterStoreClient struct {
-	ssmiface.ClientAPI
-
-	checkInput  func(*ssm.GetParameterInput)
-	stringValue *string
-	binaryValue []byte
+    checkInput  func(*ssm.GetParameterInput)
+    stringValue *string
+    binaryValue []byte
 }
 
-func (m *mockParameterStoreClient) GetParameterRequest(in *ssm.GetParameterInput) ssm.GetParameterRequest {
-	if m.checkInput != nil {
-		m.checkInput(in)
-	}
+func (m mockParameterStoreClient) GetParameter(ctx context.Context, params *ssm.GetParameterInput, optFns ...func(*ssm.Options)) (*ssm.GetParameterOutput, error) {
+    if m.checkInput != nil {
+        m.checkInput(params)
+    }
 
-	var value *string
+    var value *string
 
-	if m.stringValue != nil {
-		value = m.stringValue
-	} else if m.binaryValue != nil {
-		value = aws.String(base64.StdEncoding.EncodeToString(m.binaryValue))
-	}
+    if m.stringValue != nil {
+        value = m.stringValue
+    } else if m.binaryValue != nil {
+        value = aws.String(base64.StdEncoding.EncodeToString(m.binaryValue))
+    }
 
-	req := &aws.Request{
-		Data: &ssm.GetParameterOutput{
-			Parameter: &ssm.Parameter{
-				Value: value,
-			},
-		},
-		HTTPRequest: new(http.Request),
-	}
-	return ssm.GetParameterRequest{Request: req, Input: in, Copy: m.GetParameterRequest}
+    return &ssm.GetParameterOutput{
+        Parameter: &types.Parameter{
+            Value: value,
+        },
+        ResultMetadata: middleware.Metadata{},
+    }, nil
 }
 
 func TestAWSSecretManagerValuePreProcessor_PreProcessValue(t *testing.T) {
@@ -120,7 +114,7 @@ func TestAWSSecretManagerValuePreProcessor_PreProcessValue(t *testing.T) {
 		t.Run("Simple", func(t *testing.T) {
 			storeClient.checkInput = func(input *ssm.GetParameterInput) {
 				assert.Equal(t, "foo_bar", *input.Name)
-				assert.True(t, *input.WithDecryption)
+				assert.True(t, input.WithDecryption)
 			}
 			storeClient.stringValue = aws.String("baz")
 
@@ -131,7 +125,7 @@ func TestAWSSecretManagerValuePreProcessor_PreProcessValue(t *testing.T) {
 		t.Run("Complex", func(t *testing.T) {
 			storeClient.checkInput = func(input *ssm.GetParameterInput) {
 				assert.Equal(t, "ssmall_foo_bar", *input.Name)
-				assert.True(t, *input.WithDecryption)
+				assert.True(t, input.WithDecryption)
 			}
 			storeClient.stringValue = aws.String("baz")
 

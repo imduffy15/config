@@ -1,6 +1,6 @@
 # Config
-[![Documentation](https://godoc.org/gitlab.com/hookactions/config?status.svg)](http://godoc.org/gitlab.com/hookactions/config)
-[![Go Report Card](https://goreportcard.com/badge/gitlab.com/hookactions/config)](https://goreportcard.com/report/gitlab.com/hookactions/config)
+[![Documentation](https://godoc.org/github.com/imduffy15/config?status.svg)](http://godoc.org/github.com/imduffy15/config)
+[![Go Report Card](https://goreportcard.com/badge/github.com/imduffy15/config)](https://goreportcard.com/report/github.com/imduffy15/config)
 
 Manage your application config as a typesafe struct in as little as two function calls.
 
@@ -11,7 +11,7 @@ import (
 	"context"
 	"fmt"
 	
-	"gitlab.com/hookactions/config"
+	"github.com/imduffy15/config"
 )
 
 type MyConfig struct {
