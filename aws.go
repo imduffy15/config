@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+    "encoding/base64"
     "encoding/json"
     "fmt"
     "regexp"
@@ -17,6 +18,7 @@ import (
 var (
 	secretsManagerStringRe = regexp.MustCompile("^sm://")
 	parameterStoreStringRe = regexp.MustCompile("^ssm://")
+	base64EncodingStringRe = regexp.MustCompile("^base64://")
 )
 
 func checkPrefixAndStrip(re *regexp.Regexp, s string) (string, bool) {
@@ -77,9 +79,17 @@ func (p *AWSSecretManagerValuePreProcessor) PreProcessValue(key, value string) s
 
 func (p *AWSSecretManagerValuePreProcessor) processConfigItem(ctx context.Context, key string, value string) string {
 	if v, ok := checkPrefixAndStrip(secretsManagerStringRe, value); ok {
+	    v, base64Encoded := checkPrefixAndStrip(base64EncodingStringRe, v)
 	    v, subKey := checkPostfixAndStrip(v)
 		secret := p.loadStringValueFromSecretsManager(ctx, v)
-		if subKey == "" {
+		if base64Encoded == true {
+            decodedSecret, err := base64.StdEncoding.DecodeString(secret)
+            if err != nil {
+                panic("config/aws/loadStringValueFromSecretsManager: failed to decode the secret, " + err.Error())
+            }
+            secret = string(decodedSecret)
+        }
+        if subKey == "" {
 		    return secret
         } else {
             jsonMap := make(map[string]string)
