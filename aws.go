@@ -2,9 +2,12 @@ package config
 
 import (
 	"context"
-	"regexp"
+    "encoding/json"
+    "fmt"
+    "regexp"
+    "strings"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
+    "github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
@@ -21,6 +24,15 @@ func checkPrefixAndStrip(re *regexp.Regexp, s string) (string, bool) {
 		return re.ReplaceAllString(s, ""), true
 	}
 	return s, false
+}
+
+func checkPostfixAndStrip(s string) (string, string) {
+    res := strings.Split(s, "#")
+    if len(res) > 1 {
+        return res[0], res[1]
+    } else {
+        return res[0], ""
+    }
 }
 
 // NewAWSSecretManagerValuePreProcessor creates a new AWSSecretManagerValuePreProcessor with the given context and whether to decrypt parameter store values or not.
@@ -65,7 +77,22 @@ func (p *AWSSecretManagerValuePreProcessor) PreProcessValue(key, value string) s
 
 func (p *AWSSecretManagerValuePreProcessor) processConfigItem(ctx context.Context, key string, value string) string {
 	if v, ok := checkPrefixAndStrip(secretsManagerStringRe, value); ok {
-		return p.loadStringValueFromSecretsManager(ctx, v)
+	    v, subKey := checkPostfixAndStrip(v)
+		secret := p.loadStringValueFromSecretsManager(ctx, v)
+		if subKey == "" {
+		    return secret
+        } else {
+            jsonMap := make(map[string]string)
+            err := json.Unmarshal([]byte(secret), &jsonMap)
+            if err != nil {
+                panic("config/aws/loadStringValueFromSecretsManager: error parsing secret map, " + err.Error())
+            }
+            if subkeySecret, ok := jsonMap[subKey]; ok {
+                return subkeySecret
+            } else {
+                panic(fmt.Sprintf("config/aws/loadStringValueFromSecretsManager: failed to find subkey %s", subKey))
+            }
+        }
 	} else if v, ok := checkPrefixAndStrip(parameterStoreStringRe, v); ok {
 		return p.loadStringValueFromParameterStore(ctx, v, p.decryptParameterStoreValues)
 	}
