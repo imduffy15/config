@@ -40,7 +40,7 @@ func checkPostfixAndStrip(s string) (string, string) {
 // NewAWSSecretManagerValuePreProcessor creates a new AWSSecretManagerValuePreProcessor with the given context and whether to decrypt parameter store values or not.
 // This will load the aws config from external.LoadDefaultAWSConfig()
 func NewAWSSecretManagerValuePreProcessor(ctx context.Context, decryptParameterStoreValues bool) (*AWSSecretManagerValuePreProcessor, error) {
-	awsConfig, err := config.LoadDefaultConfig(ctx, awsConfigProvider.WithEC2IMDSRegion())
+	awsConfig, err := config.LoadDefaultConfig(ctx, config.WithEC2IMDSRegion())
 	if err != nil {
 		return nil, errors.Wrap(err, "config/aws: error loading default aws config")
 	}
